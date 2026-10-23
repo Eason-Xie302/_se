@@ -3,16 +3,218 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Homework7</title>
+  <title>NQU 圖書館借閱與逾期罰金管理系統</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      background: linear-gradient(135deg, #e8f0f8 0%, #f5efe6 100%);
+      min-height: 100vh;
+      color: #2d3a4a;
+    }
+    header {
+      background: linear-gradient(120deg, #1d3f6e 0%, #2b6292 60%, #3488b8 100%);
+      color: #fff;
+      padding: 32px 20px 26px;
+      text-align: center;
+      box-shadow: 0 4px 14px rgba(29, 63, 110, 0.35);
+    }
+    header .logo { font-size: 40px; }
+    header h1 { font-size: 26px; letter-spacing: 2px; margin-top: 6px; }
+    header p { margin-top: 6px; font-size: 14px; opacity: 0.85; }
+    main {
+      max-width: 900px;
+      margin: 28px auto 48px;
+      padding: 0 18px;
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 22px;
+    }
+    @media (max-width: 760px) { main { grid-template-columns: 1fr; } }
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 22px;
+      box-shadow: 0 3px 12px rgba(45, 58, 74, 0.08);
+    }
+    .card h2 {
+      font-size: 18px;
+      color: #1d3f6e;
+      border-left: 5px solid #f0b429;
+      padding-left: 10px;
+      margin-bottom: 14px;
+    }
+    .borrow-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .borrow-bar input {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid #c7d3de;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+    .borrow-bar input:focus { outline: 2px solid #3488b8; border-color: transparent; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #e3eaf1; }
+    th { background: #eef4fa; color: #1d3f6e; font-size: 14px; }
+    .book-status { font-weight: 700; font-size: 14px; }
+    .book-status.available { color: #1e8e3e; }
+    .book-status.borrowed { color: #c5221f; }
+    .borrow-btn {
+      padding: 7px 16px;
+      border: none;
+      border-radius: 8px;
+      background: #2b6292;
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .borrow-btn:hover:not(:disabled) { background: #1d3f6e; }
+    .borrow-btn:disabled { background: #b9c5d1; cursor: not-allowed; }
+    #statusMsg {
+      margin-top: 14px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      display: none;
+    }
+    #statusMsg.ok { display: block; background: #e6f4ea; color: #1e8e3e; border: 1px solid #b7e0c2; }
+    #statusMsg.err { display: block; background: #fdeceb; color: #c5221f; border: 1px solid #f5c6c4; }
+    .tool .row { margin-bottom: 14px; }
+    .tool label { display: block; font-size: 14px; color: #5a6b7d; margin-bottom: 6px; }
+    .tool input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #c7d3de;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+    .tool button {
+      width: 100%;
+      padding: 11px;
+      border: none;
+      border-radius: 8px;
+      background: #f0b429;
+      color: #5c4400;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: filter 0.2s;
+    }
+    .tool button:hover { filter: brightness(0.95); }
+    .tool .rule { font-size: 13px; color: #8494a5; line-height: 1.6; margin-top: 10px; }
+    #fineResult {
+      margin-top: 14px;
+      padding: 12px;
+      border-radius: 8px;
+      background: #fff8e6;
+      border: 1px dashed #f0b429;
+      color: #8a6d00;
+      font-weight: 700;
+      font-size: 16px;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
-  <button id="btn">點我</button>
-  <div id="display">初始狀態</div>
+  <header>
+    <div class="logo">📚</div>
+    <h1>NQU 圖書館借閱與逾期罰金管理系統</h1>
+    <p>National Chi Nan University Library Management System</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>館藏書目</h2>
+      <div class="borrow-bar">
+        <input id="studentId" type="text" placeholder="請輸入學號，例如 S1115001" />
+      </div>
+      <table>
+        <thead>
+          <tr><th>書名</th><th>狀態</th><th>操作</th></tr>
+        </thead>
+        <tbody id="bookList"></tbody>
+      </table>
+      <div id="statusMsg"></div>
+    </section>
+
+    <section class="card tool">
+      <h2>逾期罰金試算</h2>
+      <div class="row">
+        <label for="overdueDays">逾期天數</label>
+        <input id="overdueDays" type="number" placeholder="例如 12" />
+      </div>
+      <button id="calcBtn">計算罰金</button>
+      <p class="rule">規則：逾期每天罰 5 元，罰金累積上限 100 元。借閱上限 5 本，有未繳罰金時不可再借。</p>
+      <div id="fineResult"></div>
+    </section>
+  </main>
 
   <script>
-    document.getElementById("btn").addEventListener("click", () => {
-      document.getElementById("display").textContent = "Clicked!";
+    function showMsg(text, ok) {
+      const el = document.getElementById("statusMsg");
+      el.textContent = text;
+      el.className = ok ? "ok" : "err";
+    }
+
+    function loadBooks() {
+      fetch("/api/books")
+        .then((res) => res.json())
+        .then((data) => {
+          const tbody = document.getElementById("bookList");
+          tbody.innerHTML = "";
+          for (const b of data.books) {
+            const tr = document.createElement("tr");
+            const title = document.createElement("td");
+            title.textContent = b.title;
+            const status = document.createElement("td");
+            status.className = "book-status " + (b.available ? "available" : "borrowed");
+            status.textContent = b.available ? "可借" : "已借出";
+            const action = document.createElement("td");
+            const btn = document.createElement("button");
+            btn.className = "borrow-btn";
+            btn.dataset.title = b.title;
+            btn.textContent = "借閱";
+            btn.disabled = !b.available;
+            action.appendChild(btn);
+            tr.append(title, status, action);
+            tbody.appendChild(tr);
+          }
+        });
+    }
+
+    document.getElementById("bookList").addEventListener("click", (e) => {
+      const btn = e.target.closest(".borrow-btn");
+      if (!btn) return;
+      const studentId = document.getElementById("studentId").value.trim();
+      if (!studentId) {
+        showMsg("請先輸入學號！", false);
+        return;
+      }
+      fetch("/api/borrow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ studentId, title: btn.dataset.title })
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          showMsg(data.message, data.success);
+          loadBooks();
+        });
     });
+
+    document.getElementById("calcBtn").addEventListener("click", () => {
+      const days = parseInt(document.getElementById("overdueDays").value, 10);
+      const fine = Math.min(Math.max(isNaN(days) ? 0 : days, 0) * 5, 100);
+      document.getElementById("fineResult").textContent = `預估罰金：${fine} 元`;
+    });
+
+    loadBooks();
   </script>
 </body>
 </html>
