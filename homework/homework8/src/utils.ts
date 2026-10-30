@@ -1,4 +1,4 @@
-import { Subscription, AlertItem } from './types';
+import type { Subscription, AlertItem } from './types';
 
 // 嚴格以本地時間解析 YYYY-MM-DD，避免 UTC 時區導致日期少一天
 export function parseLocalDate(dateStr: string): Date {
