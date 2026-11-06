@@ -1,0 +1,271 @@
+```html
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>國立金門大學 - 校務資訊系統 (NQU Portal Lite)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+  <!-- 頂部導覽列 -->
+  <header class="bg-blue-900 text-white shadow-md">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-amber-400 text-slate-900 font-black flex items-center justify-center text-lg">NQU</div>
+        <div>
+          <h1 class="font-bold text-lg tracking-wide">國立金門大學 校務資訊系統</h1>
+          <p class="text-xs text-blue-200">115 學年度 第 1 學期 ｜ 資訊工程學系</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 text-xs bg-blue-950/60 px-3.5 py-2 rounded-xl border border-blue-700">
+        <span>學生：<strong>謝同學</strong></span>
+        <span>｜</span>
+        <span>學號：<strong>111410514</strong></span>
+        <span>｜</span>
+        <span id="creditBadge" class="text-amber-300 font-bold">已選 0 學分</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- 功能切換頁籤 -->
+  <div class="bg-white border-b border-slate-200">
+    <div class="max-w-6xl mx-auto px-4 flex gap-2 py-2.5">
+      <button onclick="switchTab('enroll')" id="tab-enroll" class="px-4 py-2 rounded-lg text-sm font-bold bg-blue-600 text-white">1. 線上加退選課程</button>
+      <button onclick="switchTab('timetable')" id="tab-timetable" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-100">2. 我的學期功課表</button>
+      <button onclick="switchTab('grades')" id="tab-grades" class="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-100">3. 歷年成績與 GPA 查詢</button>
+    </div>
+  </div>
+
+  <!-- 主內容區 -->
+  <main class="max-w-6xl mx-auto w-full p-4 sm:p-6 flex-1 space-y-6">
+    <div id="alertBox" class="hidden p-3.5 rounded-xl text-sm font-semibold"></div>
+
+    <!-- 頁籤 1：線上選課 -->
+    <section id="view-enroll" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-bold text-base text-slate-900">本學期開設課程清單（含衝堂自動檢測）</h2>
+          <input id="searchInput" oninput="renderCourses()" type="text" placeholder="搜尋課程名稱或教師..." class="px-3 py-1.5 text-xs border border-slate-300 rounded-lg outline-none focus:border-blue-600" />
+        </div>
+        <div id="courseList" class="divide-y divide-slate-100"></div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between">
+        <div>
+          <h2 class="font-bold text-base text-slate-900 mb-1">目前已選清單</h2>
+          <p class="text-xs text-slate-500 mb-4">學分上限：25 學分（低於 12 學分將顯示預警）</p>
+          <div id="enrolledList" class="space-y-2.5"></div>
+        </div>
+        <div class="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-sm">
+          <span class="font-semibold text-slate-600">本學期總計學分</span>
+          <span id="totalCreditsText" class="text-lg font-extrabold text-blue-700">0 學分</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 頁籤 2：學期功課表 -->
+    <section id="view-timetable" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-5 overflow-x-auto">
+      <h2 class="font-bold text-base text-slate-900 mb-4">115-1 學期個人功課表（週一至週五）</h2>
+      <table class="w-full border-collapse text-xs text-center min-w-[600px]">
+        <thead>
+          <tr class="bg-slate-100 text-slate-700">
+            <th class="border border-slate-200 py-2.5 w-20">節次</th>
+            <th class="border border-slate-200 py-2.5">週一</th>
+            <th class="border border-slate-200 py-2.5">週二</th>
+            <th class="border border-slate-200 py-2.5">週三</th>
+            <th class="border border-slate-200 py-2.5">週四</th>
+            <th class="border border-slate-200 py-2.5">週五</th>
+          </tr>
+        </thead>
+        <tbody id="timetableBody"></tbody>
+      </table>
+    </section>
+
+    <!-- 頁籤 3：成績與 GPA -->
+    <section id="view-grades" class="hidden space-y-6">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <p class="text-xs text-slate-500 font-semibold">學期平均成績</p>
+          <p id="avgScore" class="text-2xl font-extrabold text-blue-700 mt-1">88.5 分</p>
+        </div>
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <p class="text-xs text-slate-500 font-semibold">累計 GPA (4.0 制)</p>
+          <p id="gpaScore" class="text-2xl font-extrabold text-emerald-600 mt-1">3.85 / 4.0</p>
+        </div>
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+          <p class="text-xs text-slate-500 font-semibold">實得學分 / 畢業門檻</p>
+          <p class="text-2xl font-extrabold text-slate-900 mt-1">18 <span class="text-sm font-normal text-slate-500">/ 128 學分</span></p>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+        <h2 class="font-bold text-base text-slate-900 mb-4">歷年修課成績紀錄</h2>
+        <div class="divide-y divide-slate-100 text-sm" id="gradeList"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const AVAILABLE_COURSES = [
+      { id: 'CS101', name: '軟體工程導論', teacher: '陳鍾誠', credits: 3, type: '必修', day: 5, periods: [2, 3, 4], room: 'E321 電腦教室' },
+      { id: 'CS102', name: '計算機結構', teacher: '陳鍾誠', credits: 3, type: '必修', day: 4, periods: [2, 3, 4], room: 'E321 電腦教室' },
+      { id: 'CS103', name: '資料結構與演算法', teacher: '李錫捷', credits: 3, type: '必修', day: 1, periods: [2, 3, 4], room: 'E318 教室' },
+      { id: 'CS104', name: '電腦網路概論', teacher: '柯志亨', credits: 3, type: '必修', day: 2, periods: [5, 6, 7], room: 'E320 教室' },
+      { id: 'CS105', name: '人工智慧與機器學習', teacher: '馮玄明', credits: 3, type: '選修', day: 3, periods: [2, 3, 4], room: 'E322 實驗室' },
+      { id: 'CS106', name: '3D 遊戲程式設計', teacher: '王老師', credits: 3, type: '選修', day: 2, periods: [2, 3, 4], room: 'E315 多媒體室' },
+      { id: 'CS107', name: '網頁前端實務 (衝堂測試課)', teacher: '張老師', credits: 2, type: '選修', day: 5, periods: [3, 4], room: 'E310 教室' }
+    ];
+
+    constPAST_GRADES = [
+      { code: 'CS001', name: '程式設計 (一)', credits: 3, score: 92, gpa: 4.0 },
+      { code: 'CS002', name: '計算機概論', credits: 3, score: 89, gpa: 4.0 },
+      { code: 'CS003', name: '微積分', credits: 3, score: 84, gpa: 3.7 },
+      { code: 'CS004', name: '數位邏輯設計', credits: 3, score: 90, gpa: 4.0 },
+      { code: 'GE012', name: '金門學概論', credits: 2, score: 88, gpa: 4.0 }
+    ];
+
+    const DAY_NAMES = ['', '週一', '週二', '週三', '週四', '週五'];
+    const STORAGE_KEY = 'nqu_enrolled_courses_v1';
+
+    let enrolledIds = JSON.parse(localStorage.getItem(STORAGE_KEY) || '["CS101", "CS102", "CS103", "CS104"]');
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(enrolledIds));
+      renderAll();
+    }
+
+    function showAlert(msg, isError = false) {
+      const box = document.getElementById('alertBox');
+      box.textContent = msg;
+      box.className = `p-3.5 rounded-xl text-sm font-semibold ${isError ? 'bg-red-100 text-red-800 border border-red-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'}`;
+      box.classList.remove('hidden');
+      setTimeout(() => box.classList.add('hidden'), 3500);
+    }
+
+    function enrollCourse(courseId) {
+      if (enrolledIds.includes(courseId)) return;
+      const target = AVAILABLE_COURSES.find(c => c.id === courseId);
+      const enrolledCourses = AVAILABLE_COURSES.filter(c => enrolledIds.includes(c.id));
+
+      // 檢查學分上限
+      const currentCredits = enrolledCourses.reduce((s, c) => s + c.credits, 0);
+      if (currentCredits + target.credits > 25) {
+        return showAlert(`加選失敗：超過每學期 25 學分上限！`, true);
+      }
+
+      // 檢查衝堂
+      for (const c of enrolledCourses) {
+        if (c.day === target.day && c.periods.some(p => target.periods.includes(p))) {
+          return showAlert(`⚠️ 衝堂警告：「${target.name}」與已選課程「${c.name}」在${DAY_NAMES[c.day]}第 ${c.periods.join(',')} 節時間衝突！`, true);
+        }
+      }
+
+      enrolledIds.push(courseId);
+      saveState();
+      showAlert(`✅ 成功加選「${target.name}」(${target.credits} 學分)`);
+    }
+
+    function dropCourse(courseId) {
+      const target = AVAILABLE_COURSES.find(c => c.id === courseId);
+      enrolledIds = enrolledIds.filter(id => id !== courseId);
+      saveState();
+      showAlert(`已退選「${target.name}」`);
+    }
+
+    function renderCourses() {
+      const q = (document.getElementById('searchInput').value || '').toLowerCase();
+      const listEl = document.getElementById('courseList');
+      listEl.innerHTML = AVAILABLE_COURSES
+        .filter(c => c.name.toLowerCase().includes(q) || c.teacher.toLowerCase().includes(q))
+        .map(c => {
+          const isEnrolled = enrolledIds.includes(c.id);
+          return `
+            <div class="py-3 flex items-center justify-between gap-4">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-0.5 rounded text-xs font-bold ${c.type === '必修' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'}">${c.type}</span>
+                  <span class="font-bold text-sm text-slate-900">${c.id} ${c.name}</span>
+                  <span class="text-xs text-slate-500">(${c.credits} 學分)</span>
+                </div>
+                <p class="text-xs text-slate-500 mt-1">授課教師：${c.teacher} ｜ 時間：${DAY_NAMES[c.day]} 第 ${c.periods.join(',')} 節 ｜ 地點：${c.room}</p>
+              </div>
+              ${isEnrolled
+                ? `<button onclick="dropCourse('${c.id}')" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-50 text-red-600 hover:bg-red-100 shrink-0">退選</button>`
+                : `<button onclick="enrollCourse('${c.id}')" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 shrink-0">+ 加選</button>`
+              }
+            </div>
+          `;
+        }).join('');
+    }
+
+    function renderEnrolledAndTimetable() {
+      const enrolledCourses = AVAILABLE_COURSES.filter(c => enrolledIds.includes(c.id));
+      const totalCredits = enrolledCourses.reduce((s, c) => s + c.credits, 0);
+
+      document.getElementById('creditBadge').textContent = `已選 ${totalCredits} 學分`;
+      document.getElementById('totalCreditsText').textContent = `${totalCredits} 學分`;
+
+      document.getElementById('enrolledList').innerHTML = enrolledCourses.length === 0
+        ? `<p class="text-xs text-slate-400 py-4 text-center">尚未選擇任何課程</p>`
+        : enrolledCourses.map(c => `
+            <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
+              <div>
+                <p class="font-bold text-slate-800">${c.name} (${c.credits}學分)</p>
+                <p class="text-slate-500">${DAY_NAMES[c.day]} 第 ${c.periods.join(',')} 節 / ${c.room}</p>
+              </div>
+              <button onclick="dropCourse('${c.id}')" class="text-red-600 font-bold hover:underline">移除</button>
+            </div>
+          `).join('');
+
+      // 渲染功課表 (1~8節)
+      let tbodyHtml = '';
+      for (let period = 1; period <= 8; period++) {
+        tbodyHtml += `<tr><td class="border border-slate-200 py-3 font-bold bg-slate-50">第 ${period} 節</td>`;
+        for (let day = 1; day <= 5; day++) {
+          const hit = enrolledCourses.find(c => c.day === day && c.periods.includes(period));
+          if (hit) {
+            tbodyHtml += `<td class="border border-slate-200 p-2 bg-blue-50 text-blue-900"><div class="font-bold">${hit.name}</div><div class="text-[10px] text-blue-600">${hit.room}</div></td>`;
+          } else {
+            tbodyHtml += `<td class="border border-slate-200 p-2 text-slate-300">-</td>`;
+          }
+        }
+        tbodyHtml += `</tr>`;
+      }
+      document.getElementById('timetableBody').innerHTML = tbodyHtml;
+    }
+
+    function renderGrades() {
+      document.getElementById('gradeList').innerHTML = constPAST_GRADES.map(g => `
+        <div class="py-3 flex items-center justify-between">
+          <div>
+            <span class="font-bold text-slate-800">${g.code} ${g.name}</span>
+            <span class="ml-2 text-xs text-slate-500">${g.credits} 學分</span>
+          </div>
+          <div class="flex items-center gap-4">
+            <span class="font-bold text-slate-900">${g.score} 分</span>
+            <span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 text-xs font-bold">GPA ${g.gpa.toFixed(1)}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function switchTab(tab) {
+      ['enroll', 'timetable', 'grades'].forEach(t => {
+        document.getElementById(`view-${t}`).classList.toggle('hidden', t !== tab);
+        document.getElementById(`tab-${t}`).className = t === tab
+          ? 'px-4 py-2 rounded-lg text-sm font-bold bg-blue-600 text-white'
+          : 'px-4 py-2 rounded-lg text-sm font-bold text-slate-600 hover:bg-slate-100';
+      });
+    }
+
+    function renderAll() {
+      renderCourses();
+      renderEnrolledAndTimetable();
+      renderGrades();
+    }
+
+    renderAll();
+  </script>
+</body>
+</html>

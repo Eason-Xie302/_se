@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SubCal Lite v1.0 - 智慧訂閱管理系統 (初版原型)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+  <div class="max-w-4xl mx-auto p-4 sm:p-8 space-y-6">
+    <!-- 標題區 -->
+    <header class="bg-slate-900 text-white p-6 rounded-2xl shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <span class="text-xs font-bold uppercase tracking-wider text-blue-400">SubCal v1.0 Prototype</span>
+        <h1 class="text-2xl font-extrabold mt-1">SubCal 智慧訂閱管理系統（輕量版）</h1>
+        <p class="text-xs text-slate-300 mt-1">集中記錄數位訂閱服務，自動將年繳攤提換算為每月實際支出。</p>
+      </div>
+      <button onclick="resetSamples()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold border border-slate-700 shrink-0">
+        載入預設範例
+      </button>
+    </header>
+
+    <!-- 統計指標卡片 -->
+    <section class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <p class="text-xs text-slate-500 font-semibold">訂閱服務總數</p>
+        <p id="statCount" class="text-2xl font-extrabold text-slate-900 mt-1">0 項</p>
+      </div>
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <p class="text-xs text-slate-500 font-semibold">每月預估總支出</p>
+        <p id="statMonthly" class="text-2xl font-extrabold text-blue-600 mt-1">TWD $0</p>
+      </div>
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <p class="text-xs text-slate-500 font-semibold">全年預估總支出</p>
+        <p id="statYearly" class="text-2xl font-extrabold text-slate-900 mt-1">TWD $0</p>
+      </div>
+    </section>
+
+    <!-- 主內容區：左新增表單 + 右清單 -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- 新增訂閱表單 -->
+      <form onsubmit="handleAdd(event)" class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4 h-fit">
+        <h2 class="font-bold text-base text-slate-900">新增訂閱項目</h2>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">服務名稱 *</label>
+          <input id="nameInput" required type="text" placeholder="例如：Netflix、Spotify" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm outline-none focus:border-blue-600" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">價格 (TWD) *</label>
+            <input id="priceInput" required type="number" min="0" placeholder="380" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm outline-none focus:border-blue-600" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">付款週期</label>
+            <select id="cycleInput" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white">
+              <option value="monthly">月繳</option>
+              <option value="yearly">年繳</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">分類</label>
+            <select id="catInput" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white">
+              <option value="娛樂">娛樂</option>
+              <option value="音樂">音樂</option>
+              <option value="AI 工具">AI 工具</option>
+              <option value="遊戲">遊戲</option>
+              <option value="雲端服務">雲端服務</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">下次扣款日 *</label>
+            <input id="dateInput" required type="date" class="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm" />
+          </div>
+        </div>
+        <button type="submit" class="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm transition">
+          + 加入訂閱清單
+        </button>
+      </form>
+
+      <!-- 訂閱清單 -->
+      <div class="md:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <h2 class="font-bold text-base text-slate-900 mb-4">我的訂閱服務列表</h2>
+        <div id="subList" class="divide-y divide-slate-100"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'subcal_lite_v1';
+    const DEFAULT_SAMPLES = [
+      { id: 1, name: 'Netflix 標準方案', price: 380, cycle: 'monthly', category: '娛樂', nextDate: '2026-11-15' },
+      { id: 2, name: 'ChatGPT Plus', price: 650, cycle: 'monthly', category: 'AI 工具', nextDate: '2026-11-20' },
+      { id: 3, name: 'Spotify 學生方案', price: 89, cycle: 'monthly', category: '音樂', nextDate: '2026-11-25' },
+      { id: 4, name: 'Google One 200GB', price: 900, cycle: 'yearly', category: '雲端服務', nextDate: '2026-12-10' }
+    ];
+
+    let subs = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null') || DEFAULT_SAMPLES;
+    document.getElementById('dateInput').valueAsDate = new Date();
+
+    function saveAndRender() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(subs));
+      const monthlyTotal = subs.reduce((sum, s) => sum + (s.cycle === 'monthly' ? s.price : s.price / 12), 0);
+      const yearlyTotal = monthlyTotal * 12;
+
+      document.getElementById('statCount').textContent = `${subs.length} 項`;
+      document.getElementById('statMonthly').textContent = `TWD $${Math.round(monthlyTotal).toLocaleString()}`;
+      document.getElementById('statYearly').textContent = `TWD $${Math.round(yearlyTotal).toLocaleString()}`;
+
+      const listEl = document.getElementById('subList');
+      if (subs.length === 0) {
+        listEl.innerHTML = `<p class="text-sm text-slate-400 py-8 text-center">尚無訂閱紀錄，請由左側表單新增。</p>`;
+        return;
+      }
+
+      listEl.innerHTML = subs.map(s => `
+        <div class="py-3.5 flex items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-xs font-bold">${s.category}</span>
+              <span class="font-bold text-slate-900 text-sm">${s.name}</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">下次扣款日：${s.nextDate} （${s.cycle === 'monthly' ? '月繳' : '年繳'}）</p>
+          </div>
+          <div class="flex items-center gap-4">
+            <div class="text-right">
+              <p class="font-extrabold text-sm text-slate-900">TWD $${s.price.toLocaleString()}</p>
+              <p class="text-[11px] text-slate-400">月均 $${Math.round(s.cycle === 'monthly' ? s.price : s.price / 12)}</p>
+            </div>
+            <button onclick="removeSub(${s.id})" class="text-xs font-bold text-red-500 hover:text-red-700 px-2 py-1 rounded hover:bg-red-50">刪除</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function handleAdd(e) {
+      e.preventDefault();
+      subs.unshift({
+        id: Date.now(),
+        name: document.getElementById('nameInput').value.trim(),
+        price: Number(document.getElementById('priceInput').value),
+        cycle: document.getElementById('cycleInput').value,
+        category: document.getElementById('catInput').value,
+        nextDate: document.getElementById('dateInput').value
+      });
+      document.getElementById('nameInput').value = '';
+      document.getElementById('priceInput').value = '';
+      saveAndRender();
+    }
+
+    function removeSub(id) {
+      subs = subs.filter(s => s.id !== id);
+      saveAndRender();
+    }
+
+    function resetSamples() {
+      subs = [...DEFAULT_SAMPLES];
+      saveAndRender();
+    }
+
+    saveAndRender();
+  </script>
+</body>
+</html>
