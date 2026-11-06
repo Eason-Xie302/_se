@@ -4,7 +4,7 @@
 | 2 | 校務系統 | 否 | 是 | [02](https://github.com/Eason-Xie302/_se/tree/main/homework/homework2) |
 | 3 | 有價值專案 | 否 | 是 | [03](https://github.com/Eason-Xie302/_se/tree/main/homework/homework3) |
 | 4 | git flow | 是 | | [04](https://github.com/Eason-Xie302/_se/tree/main/homework/homework4) |
-| 5 | (放假) | 是 | | |
+| 5 | (放假) |  | | |
 | 6 | docker | 是 | | [06](https://github.com/Eason-Xie302/_se/tree/main/homework/homework6) |
 | 7 | 網站測試 | 是 | | [07](https://github.com/Eason-Xie302/_se/tree/main/homework/homework7) |
 | 8 | 有價值專案 | 是 | | [08](https://github.com/Eason-Xie302/_se/tree/main/homework/homework8) |
